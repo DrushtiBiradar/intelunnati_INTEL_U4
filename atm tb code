@@ -1,0 +1,76 @@
+module atm1_tb();
+reg clk, rst, insertcard, cardscan, acc_unlocked, deposit,withdraw,ministate, amt_entered, transaction_verified, more_transaction,gre_ten, scan_face; 
+reg pin_valid;
+reg Amount_valid;
+wire z;
+
+atm1 test1 (.clk(clk), .rst(rst), .insertcard(insertcard), .cardscan(cardscan), .acc_unlocked(acc_unlocked), .deposit(deposit), .withdraw(withdraw), .ministate(ministate), .amt_entered(amt_entered), .transaction_verified(transaction_verified), .more_transaction(more_transaction), .gre_ten(gre_ten),.scan_face(scan_face),
+.pin_valid(pin_valid),.Amount_valid(Amount_valid),.z(z));
+
+always #10 clk=~clk;
+
+initial 
+begin
+	clk=0;
+	#10 rst=1'b0;
+	#10 insertcard=1'b1;
+	#10 cardscan=1'b1;
+	#10 acc_unlocked = 1'b1;
+	#10 pin_valid=1'b1;
+	#10 Amount_valid=1'b1;
+	
+	#20 withdraw=4'b0000;
+	#10 amt_entered=1'b1;
+	#10 gre_ten=1'b1;
+	#10 scan_face=1'b1;
+	#10 transaction_verified=1'b1;
+	#10 more_transaction=1'b1;
+	
+	#20 withdraw=4'b0001;
+	#10 amt_entered=1'b1;
+	#10 gre_ten=1'b0;
+	#10 scan_face=1'b0;
+	#10 transaction_verified=1'b1;
+	#10 more_transaction=1'b0;
+	
+	#20 withdraw=4'b0010;
+	#10 amt_entered=1'b1;
+	#10 gre_ten=1'b1;
+	#10 scan_face=1'b0;
+	#10 transaction_verified=1'b0;
+	#10 more_transaction=1'b1;
+   
+	#20 withdraw=4'b0011;
+	#10 amt_entered=1'b1;
+	#10 gre_ten=1'b1;
+	#10 scan_face=1'b1;
+	#10 transaction_verified=1'b1;
+	#10 more_transaction=1'b0;
+	
+	#20 deposit=4'b0100;
+	#10 amt_entered=1'b1;
+	#10 transaction_verified=1'b0;
+	#10 more_transaction=1'b0;
+	
+	#20 deposit=4'b0101;
+	#10 amt_entered=1'b1;
+	#10 transaction_verified=1'b1;
+	#10 more_transaction=1'b0; 
+	
+	#20 deposit=4'b0110;
+	#10 amt_entered=1'b1;
+	#10 transaction_verified=1'b0;
+	#10 more_transaction=1'b1; 
+   
+	#20 deposit=4'b0111;
+	#10 amt_entered=1'b1;
+	#10 transaction_verified=1'b1;
+	#10 more_transaction=1'b1; 
+	
+	#20 ministate=4'b1000;
+
+
+
+end 
+
+endmodule
