@@ -1,0 +1,157 @@
+module atm1 ( input clk, rst, insertcard, cardscan, acc_unlocked, deposit,withdraw,ministate, amt_entered, valid_transaction, transaction_verified, more_transaction,gre_ten, scan_face,
+input pin_valid,
+input Amount_valid, 
+output reg z ); 
+
+reg [1:0] ipin_count; // invalid PIN counter 
+
+parameter [4:0] scan_card = 5'b00000, 
+scan_line = 5'b00001, 
+storing_info = 5'b00010, 
+enter_pin = 5'b00011, 
+count = 5'b00100, 
+transaction_type = 5'b00110, 
+enter_deposit_amount = 5'b00111, 
+dep_check = 5'b01000, 
+invalid = 5'b01001, 
+anything_else = 5'b01010, 
+dep_verify = 5'b01011, 
+updating_balance = 5'b01100, 
+enter_wd_amount = 5'b01101, 
+wd_check = 5'b01110,
+verify_face=5'b01111, 
+wd_verify = 5'b10000, 
+mini_state = 5'b10001;
+
+
+reg [3:0] state,next; 
+reg [3:0] cardpin=4'b1111; 
+reg [15:0] balance=16'b0001111111111000;
+reg [4:0] Amount=4'b1111; 
+
+
+always @(posedge clk) 
+begin
+	if(rst) begin 
+		state<=scan_card; 
+	end 
+	else 
+		state<=next; 
+end 
+
+always @(negedge clk) 
+begin 
+	case(state) 
+		scan_card:if(insertcard) //S0 
+						next = scan_line; 
+					else begin 
+						next = scan_card; 
+						ipin_count = 2'b0;
+					end 
+		scan_line:if(cardscan) //S1 
+						next = storing_info; 
+					  else begin 
+							next = scan_card; 
+							ipin_count = 2'b0; 
+						end 
+		storing_info:if(acc_unlocked) //S2 
+							next = enter_pin; 
+						 else begin 
+								next = scan_card; 
+								ipin_count = 2'b0; 
+						 end 
+		enter_pin:if(pin_valid) //S3 
+						next = transaction_type; 
+					 else begin 
+							ipin_count = ipin_count+1; 
+							next = count; end
+		count: 
+				begin 
+				if (pin_valid) //S4 
+			     next = transaction_type; 
+		      else if(ipin_count != 3 ) begin 
+                    ipin_count = ipin_count+1; 
+                     next = count;
+				    end 
+             else begin 
+                 next = scan_card; 
+                 ipin_count = 2'b0; 
+                end 
+             end 
+      transaction_type:if(deposit) //S5 
+                         next = enter_deposit_amount; 
+                       else if (withdraw) 
+                               next = enter_wd_amount;
+                         else if (ministate) 
+                                 next = scan_card;
+      enter_deposit_amount:if(amt_entered)//S6 
+                             next = dep_check; 
+                           else 
+                             next = transaction_type; 
+     /* dep_check:if(Amount<=(~balance)) //S7 
+                  next = dep_verify; 
+                else 
+                  next = invalid; 
+      invalid : next = anything_else; //S8 */
+      anything_else:if(more_transaction) //S9 
+                      next = transaction_type; 
+                    else
+                     begin
+                     next = scan_card; 
+                     ipin_count = 2'b0; 
+                     end 
+       dep_verify:if(transaction_verified)
+		              begin //S10 
+                     balance=balance+Amount; 
+                     next = updating_balance;
+						  end 
+                  else 
+                    next = dep_verify; 
+       updating_balance: next = anything_else; //S11 
+       enter_wd_amount:if(amt_entered ) //S12 
+                          next = wd_check; 
+                       else 
+                         next = transaction_type; 
+       wd_check:if(Amount_valid<=balance && balance>=1'd0) //S13 
+                   next = gre_ten; 
+                else if
+                  (wd_verify);
+					 else if
+					   (invalid);
+		 gre_ten:if(scan_face)//s14
+		          next = verify_face;
+					else
+				    next = invalid;
+		 verify_face:next=wd_verify;//s15
+		 wd_verify:if(transaction_verified)
+		             begin //S16
+                    balance=balance-Amount; 
+                    next = updating_balance; 
+						 end 
+                 else  
+                    next = wd_verify; 
+       mini_state:if(valid_transaction)//s17
+		              begin 
+                     next =  anything_else;
+                    end
+                  else
+                   next = scan_card; 
+
+ default : begin 
+           next = scan_card; 
+           ipin_count = 2'b0; 
+           end 
+endcase 
+end  
+
+
+  always @ (state) 
+   begin 
+   case(state) 
+       updating_balance : z=1; 
+       default : z=0; 
+   endcase 
+   end 
+	
+	
+endmodule
